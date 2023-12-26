@@ -559,6 +559,8 @@ async def process_update(member, alt_updater=False):
 
     Di.data_update(data)
 
+    await nick_set(member)
+
     # notify moderator of new member
     if response_case != 1:
         priority = True
@@ -568,7 +570,7 @@ async def process_update(member, alt_updater=False):
     mem_type = ['error', "student", "faculty/staff member", "alumnus"][response_case]
 
     await mod_report(
-        f"{member.display_name} updated data\nmember type: {mem_type}\nnew data: {str(data)}",
+        f"{member.display_name} updated data\nmember type: {mem_type}\nnew data: {str(data)}\nfields updated: {to_update}",
         mention_mod=priority)
 
 
