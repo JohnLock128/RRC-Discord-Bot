@@ -506,6 +506,7 @@ async def process_update(member, alt_updater=False):
         response = await bot.wait_for('message', check=lambda m: m.author == member)
         res = ''.join(filter(lambda x: x == ',' or x.isdigit(), response.content))
         res = res.split(',')
+        res = [int(i) for i in res]
         if len(res) < 1:
             await member.send(
                 f'Your response is not a valid answer, expected answers must include  at least one number between 1 and {len(data)}')
