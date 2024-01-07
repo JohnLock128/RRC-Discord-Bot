@@ -174,7 +174,7 @@ async def ask_fname(member):
         it += 1
         await member.send(
             'What is your preferred(first) name? (please be sure to capitalize appropriately, eg. "John")')
-        response = await bot.wait_for('message', check=lambda m: m.author == member)
+        response = await bot.wait_for('message', check=lambda m: m.author == member and isinstance(m.channel, discord.DMChannel))
         if len(response.content) > 15:
             await member.send('Your response is not a valid answer, expected answers must be less than 15 characters')
             continue
@@ -188,7 +188,7 @@ async def ask_lname(member):
     while it < maxiter:
         it += 1
         await member.send('What is your family/last name? (please be sure to capitalize appropriately, eg. "Doe")')
-        response = await bot.wait_for('message', check=lambda m: m.author == member)
+        response = await bot.wait_for('message', check=lambda m: m.author == member and isinstance(m.channel, discord.DMChannel))
         if len(response.content) > 15:
             await member.send('Your response is not a valid answer, expected answers must be less than 15 characters')
             continue
@@ -203,7 +203,7 @@ async def ask_type(member, allow_guest=True):
         it += 1
         await member.send(
             'Please respond with which of the following groups best describes you:``` 1. student\n 2. faculty/staff member\n 3. alumni\n 4. other```(type the number that corresponds to the group)')
-        response = await bot.wait_for('message', check=lambda m: m.author == member)
+        response = await bot.wait_for('message', check=lambda m: m.author == member and isinstance(m.channel, discord.DMChannel))
         res = new_int(''.join(filter(str.isdigit, response.content)))
         if 1 <= res <= 4:
             case = int(res)
@@ -232,7 +232,7 @@ async def ask_rin(member, response_case, updating_row=None):
         while it < maxiter:
             it += 1
             await member.send('What is your RIN?')
-            response = await bot.wait_for('message', check=lambda m: m.author == member)
+            response = await bot.wait_for('message', check=lambda m: m.author == member and isinstance(m.channel, discord.DMChannel))
             res = new_int(''.join(filter(str.isdigit, response.content)))
             if 660000000 < res < 670000000 and Di.unique_on_col(res, 4, ignore_row_index=updating_row):
                 await member.send(f'Your response: {res}')
@@ -264,7 +264,7 @@ async def ask_major(member, response_case):
                 message += f'\n {i + 1}. {majors[i + 1][0]}'
             message += "```"
             await member.send(message)
-            response = await bot.wait_for('message', check=lambda m: m.author == member)
+            response = await bot.wait_for('message', check=lambda m: m.author == member and isinstance(m.channel, discord.DMChannel))
             res = ''.join(filter(lambda x: x == ',' or x.isdigit(), response.content))
             res = res.split(',')
             if len(res) < 1:
@@ -288,7 +288,7 @@ async def ask_major(member, response_case):
         else:
             await member.send(
                 'What department/group do you work in? (please respond with the abbreviation for your depart or group, eg. ECSE, MANE, CATS etc. this will appear in your server nickname, so please try to keep it short)')
-            response = await bot.wait_for('message', check=lambda m: m.author == member)
+            response = await bot.wait_for('message', check=lambda m: m.author == member and isinstance(m.channel, discord.DMChannel))
             if len(response.content) > 10:
                 await member.send(
                     'Your response is not a valid answer, expected answers must be less than 10 characters')
@@ -310,7 +310,7 @@ async def ask_gradyear(member, response_case):
         else:
             await member.send(
                 'What is your expected graduation year? (please respond with a four-digit year eg. 2000)')
-        response = await bot.wait_for('message', check=lambda m: m.author == member)
+        response = await bot.wait_for('message', check=lambda m: m.author == member and isinstance(m.channel, discord.DMChannel))
         if response_case == 2 and (response.content.count('n') > 0 or response.content.count('N') > 0) and (response.content.count('a') > 0 or response.content.count('A') > 0):
             await member.send(f'Your response: N/A')
             return ""
@@ -330,7 +330,7 @@ async def ask_eula(member):
         iter7 += 1
         await member.send(
             'Do you agree to follow all rules laid out in the #rules channel of the RPI Robotics Club server? (Please respond with y/n)')
-        response = await bot.wait_for('message', check=lambda m: m.author == member)
+        response = await bot.wait_for('message', check=lambda m: m.author == member and isinstance(m.channel, discord.DMChannel))
         if len(''.join(filter(lambda x: x == 'y' or x == 'Y', response.content))):
             await member.send(f'Your response: Yes')
             return 'Yes'
@@ -353,7 +353,7 @@ async def ask_email(member, response_case, updating_row=None):
             await member.send('What is your RPI email address?')
         else:
             await member.send('What is your email address?')
-        response = await bot.wait_for('message', check=lambda m: m.author == member)
+        response = await bot.wait_for('message', check=lambda m: m.author == member and isinstance(m.channel, discord.DMChannel))
         if response_case != 3 and response.content[-8:] != "@rpi.edu":
             await member.send(
                 'Your response is not a valid answer, expected answers must be an email address ending with "@rpi.edu"')
@@ -394,7 +394,7 @@ async def ask_email(member, response_case, updating_row=None):
                     iter3 = 0
                     while iter3 < maxiter:
                         iter3 += 1
-                        otp_response = await bot.wait_for('message', check=lambda m: m.author == member)
+                        otp_response = await bot.wait_for('message', check=lambda m: m.author == member and isinstance(m.channel, discord.DMChannel))
                         check = new_int(''.join(filter(str.isdigit, otp_response.content)))
                         if check != int(otp) and check != 1 and check != 2:
                             await member.send('The code you sent is not valid, please ensure you typed it correctly and try again. (If you need the email to be resent reply "1". If you need to re-enter your email, reply "2")')
@@ -503,7 +503,7 @@ async def process_update(member, alt_updater=False):
         it += 1
         done = 1
         await member.send(message)
-        response = await bot.wait_for('message', check=lambda m: m.author == member)
+        response = await bot.wait_for('message', check=lambda m: m.author == member and isinstance(m.channel, discord.DMChannel))
         res = ''.join(filter(lambda x: x == ',' or x.isdigit(), response.content))
         res = res.split(',')
         res = [int(i) for i in res]
