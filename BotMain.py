@@ -134,7 +134,10 @@ async def set_server_nickname(member, new_nickname):
 
 
 async def nick_set(member):
-    await set_server_nickname(member, nick_gen(Di.get_data(member.id)))
+    old_nick = member.display_name
+    new_nick = nick_gen(Di.get_data(member.id))
+    await set_server_nickname(member, new_nick)
+    await mod_report(f'updated nickname for user {member.id} from "{old_nick}" to "{new_nick}"')
 
 
 async def update_roles(member, role_descriptions, keep_only_specified=False):
