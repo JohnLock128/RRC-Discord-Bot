@@ -19,7 +19,7 @@ else:
 
 def update_google_sheet_from_csv(sheet_name, page_index):
     # Construct the path to the CSV file
-    csv_file_path = os.path.join(script_path, "data.csv")
+    csv_file_path = os.path.join(script_path, "Data.csv")
 
     # Read data from CSV file
     with open(csv_file_path, 'r') as csv_file:
@@ -40,7 +40,7 @@ def update_google_sheet_from_csv(sheet_name, page_index):
 
 def backup_csv_file():
     # Construct the path to the CSV file
-    csv_file_path = os.path.join(script_path, "data.csv")
+    csv_file_path = os.path.join(script_path, "Data.csv")
 
     # Read data from CSV file
     with open(csv_file_path, 'r') as csv_file:
