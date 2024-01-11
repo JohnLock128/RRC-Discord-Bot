@@ -47,7 +47,7 @@ def backup_csv_file():
         data = list(csv.reader(csv_file))
 
     # Construct the path to the backup folder
-    backup_folder_path = os.path.join(script_path, "Data_backups")
+    backup_folder_path = os.path.join(script_path, "Data_Backups")
 
     # Create the backup folder if it doesn't exist
     os.makedirs(backup_folder_path, exist_ok=True)
