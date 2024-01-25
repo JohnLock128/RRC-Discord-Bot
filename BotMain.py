@@ -563,6 +563,8 @@ async def process_update(member, alt_updater=False):
 
     Di.data_update(data)
 
+    await member.send('''Your update has been processed!''')
+
     await nick_set(member)
 
     # notify moderator of new member
