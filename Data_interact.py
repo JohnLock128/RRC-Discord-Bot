@@ -123,7 +123,7 @@ def data_update(updated_data):
     # Find the index of the row with the matching first column
     index_to_update = None
     for index, row in enumerate(rows[1:]):  # Start from index 1 to skip the header
-        if int(row[0]) == updated_data[0]:  # Assuming the first column contains integers
+        if int(row[0]) == int(updated_data[0]):  # Assuming the first column contains integers
             index_to_update = index + 1
             break
 
