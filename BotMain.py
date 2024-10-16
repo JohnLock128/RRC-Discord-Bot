@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 import re
+from enums import Major
 import sendgrid
 from sendgrid.helpers.mail import Mail, Email, To, Content
 import Token
@@ -19,39 +20,7 @@ worksheet_index = Token.Sheet_Index
 
 maxiter = 1000
 
-majors = [['Aeronautical Engineering', 'Aero'],
-          ['Applied Physics', 'ApPhys'],
-          ['Architecture', 'Archi'],
-          ['Biology', 'Bio'],
-          ['Biomedical Engineering', 'BME'],
-          ['Business Analytics', 'BA'],
-          ['Business and Management', 'BMGT'],
-          ['Chemical Engineering', 'ChemE'],
-          ['Chemistry', 'Chem'],
-          ['Civil Engineering', 'CivE'],
-          ['Cognitive Science', 'CogSci'],
-          ['Computer and Systems Engineering', 'CSE'],
-          ['Computer Science', 'CS'],
-          ['Economics', 'Econ'],
-          ['Electrical Engineering', 'EE'],
-          ['Environmental Engineering', 'EnvE'],
-          ['Environmental Science', 'EnvS'],
-          ['Games and Simulation Arts and Sciences', 'GSAS'],
-          ['Geology', 'Geo'],
-          ['Industrial and Management Engineering', 'IME'],
-          ['Information Technology and Web Science', 'ITWS'],
-          ['Materials Engineering', 'MatSci'],
-          ['Mathematics', 'Math'],
-          ['Mechanical Engineering', 'MechE'],
-          ['Music', 'Music'],
-          ['Nuclear Engineering', 'NucE'],
-          ['Philosophy', 'Phil'],
-          ['Physics', 'Phys'],
-          ['Psychological Science', 'PsychS'],
-          ['Science, Technology, and Society', 'STS'],
-          ['Sustainability Studies', 'SustS']]
-
-
+# FIXME `new_int` does not always return an integer
 def new_int(x):
     if x != "":
         x = int(x)
@@ -262,28 +231,41 @@ async def ask_major(member, response_case):
             message = ['error', 'Respond with the number(s) that correspond to your current Major(s)', 'error',
                        'Respond with the number(s) that correspond to the degree(s) you received from RPI'][
                           response_case] + ' (if you have a dual and/or double major you may enter multiple numbers separated by commas, eg. "4,27,12" or "9"'
-            message += f'``` 0. {majors[0][0]}'
-            for i in range(len(majors) - 1):
-                message += f'\n {i + 1}. {majors[i + 1][0]}'
-            message += "```"
+
+            # Create the list of all majors
+            message += '```\n'
+            for index, option in enumerate(Major):
+                message += f'{index}. {option.major}\n'
+            message += '```'
+
             await member.send(message)
             response = await bot.wait_for('message', check=lambda m: m.author == member and isinstance(m.channel, discord.DMChannel))
             res = ''.join(filter(lambda x: x == ',' or x.isdigit(), response.content))
             res = res.split(',')
             if len(res) < 1:
                 await member.send(
-                    f'Your response is not a valid answer, expected answers must include  at least one number between 0 and {len(majors) - 1}')
+                    f'Your response is not a valid answer, expected answers must include  at least one number between 0 and {len(Major) - 1}')
                 continue
             res_long = []
             res_short = ""
+
+            # NOTE The ordering of `list(Major)` is guaranteed to match the ordering of `enumerate(Major)`
+            majors = list(Major)
+
             for i in range(len(res)):
-                if new_int(res[i]) >= len(majors) or new_int(res[i]) < 0:
+                if new_int(res[i]) >= len(Major) or new_int(res[i]) < 0:
                     await member.send(
-                        f'Your response is not a valid answer, expected answers must only include numbers between 0 and {len(majors) - 1}')
+                        f'Your response is not a valid answer, expected answers must only include numbers between 0 and {len(Major) - 1}')
                     done = 0
                     break
-                res_long.append(majors[new_int(res[i])][0])
-                res_short += majors[new_int(res[i])][1] + "/"
+
+                # Selects the value from the `Major` enum based on user input
+                # FIXME `new_int` does not always return an integer; casted here to get around it
+                selected_index = int(new_int(res[i]))
+                selected_major = majors[selected_index]
+
+                res_long.append(selected_major.major)
+                res_short += selected_major.alias
             if done == 1:
                 await member.send(
                     f'''Your response: {"".join(filter(lambda x: x != "[" and x != "]" and x != "'", str(res_long)))}''')
