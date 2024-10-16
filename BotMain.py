@@ -222,6 +222,15 @@ async def ask_rin(member, response_case, updating_row=None):
         return ""
 
 
+def digit_or_comma(char: str) -> bool:
+    """
+    Returns true if the character is a digit or comma.
+
+    Used for filter expressions.
+    """
+    return char.isdigit() or char == ","
+
+
 async def ask_major(member, response_case):
     it = 0
     while it < maxiter:
@@ -233,36 +242,39 @@ async def ask_major(member, response_case):
                           response_case] + ' (if you have a dual and/or double major you may enter multiple numbers separated by commas, eg. "4,27,12" or "9"'
 
             # Create the list of all majors
-            message += '```\n'
+            message += "```\n"
             for index, option in enumerate(Major):
-                message += f'{index}. {option.major}\n'
-            message += '```'
+                message += f"{index}. {option.major}\n"
+            message += "```"
 
             await member.send(message)
             response = await bot.wait_for('message', check=lambda m: m.author == member and isinstance(m.channel, discord.DMChannel))
-            res = ''.join(filter(lambda x: x == ',' or x.isdigit(), response.content))
-            res = res.split(',')
-            if len(res) < 1:
+
+            answers = ''.join(filter(digit_or_comma, response.content)).split(',')
+
+            if len(answers) < 1:
                 await member.send(
                     f'Your response is not a valid answer, expected answers must include  at least one number between 0 and {len(Major) - 1}')
                 continue
+
             res_long = []
             res_short = ""
 
             # NOTE The ordering of `list(Major)` is guaranteed to match the ordering of `enumerate(Major)`
             majors = list(Major)
 
-            for i in range(len(res)):
-                if new_int(res[i]) >= len(Major) or new_int(res[i]) < 0:
+            for answer in answers:
+                # FIXME `new_int` does not always return an integer; casted here to get around it
+                answer = int(new_int(answer))
+
+                if answer >= len(Major) or answer < 0:
                     await member.send(
                         f'Your response is not a valid answer, expected answers must only include numbers between 0 and {len(Major) - 1}')
                     done = 0
                     break
 
                 # Selects the value from the `Major` enum based on user input
-                # FIXME `new_int` does not always return an integer; casted here to get around it
-                selected_index = int(new_int(res[i]))
-                selected_major = majors[selected_index]
+                selected_major = majors[answer]
 
                 res_long.append(selected_major.major)
                 res_short += selected_major.alias
