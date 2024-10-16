@@ -20,13 +20,9 @@ worksheet_index = Token.Sheet_Index
 
 maxiter = 1000
 
-# FIXME `new_int` does not always return an integer
-def new_int(x):
-    if x != "":
-        x = int(x)
-    else:
-        x = 1e20
-    return x
+def new_int(x: str | int) -> int:
+    # TODO Determine an appropriate error value for if x is empty, such as `None`
+    return int(1e20) if x == "" else int(x)
 
 
 def nick_gen(data, max_len=32):
@@ -264,8 +260,7 @@ async def ask_major(member, response_case):
             majors = list(Major)
 
             for answer in answers:
-                # FIXME `new_int` does not always return an integer; casted here to get around it
-                answer = int(new_int(answer))
+                answer = new_int(answer)
 
                 if answer >= len(Major) or answer < 0:
                     await member.send(
