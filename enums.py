@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, StrEnum
 
 class Major(Enum):
     AERONAUTICAL_ENGINEERING = ("Aeronautical Engineering", "Aero")
@@ -37,3 +37,10 @@ class Major(Enum):
         self.major = major
         self.alias = alias
 
+
+# TODO Potentially store a role ID alongside
+class UserType(StrEnum):
+    STUDENT = "Student"
+    FACULTY_STAFF = "Faculty/Staff Member"
+    ALUMNI = "Alumni"
+    OTHER = "Other"
