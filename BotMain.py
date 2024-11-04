@@ -1,7 +1,6 @@
 import discord
 from discord.ext import commands
 import re
-from enums import Major, UserType
 import sendgrid
 from sendgrid.helpers.mail import Mail, Email, To, Content
 import Token
@@ -20,9 +19,45 @@ worksheet_index = Token.Sheet_Index
 
 maxiter = 1000
 
-def new_int(x: str | int) -> int:
-    # TODO Determine an appropriate error value for if x is empty, such as `None`
-    return int(1e20) if x == "" else int(x)
+majors = [['Aeronautical Engineering', 'Aero'],
+          ['Applied Physics', 'ApPhys'],
+          ['Architecture', 'Archi'],
+          ['Biology', 'Bio'],
+          ['Biomedical Engineering', 'BME'],
+          ['Business Analytics', 'BA'],
+          ['Business and Management', 'BMGT'],
+          ['Chemical Engineering', 'ChemE'],
+          ['Chemistry', 'Chem'],
+          ['Civil Engineering', 'CivE'],
+          ['Cognitive Science', 'CogSci'],
+          ['Computer and Systems Engineering', 'CSE'],
+          ['Computer Science', 'CS'],
+          ['Economics', 'Econ'],
+          ['Electrical Engineering', 'EE'],
+          ['Environmental Engineering', 'EnvE'],
+          ['Environmental Science', 'EnvS'],
+          ['Games and Simulation Arts and Sciences', 'GSAS'],
+          ['Geology', 'Geo'],
+          ['Industrial and Management Engineering', 'IME'],
+          ['Information Technology and Web Science', 'ITWS'],
+          ['Materials Engineering', 'MatSci'],
+          ['Mathematics', 'Math'],
+          ['Mechanical Engineering', 'MechE'],
+          ['Music', 'Music'],
+          ['Nuclear Engineering', 'NucE'],
+          ['Philosophy', 'Phil'],
+          ['Physics', 'Phys'],
+          ['Psychological Science', 'PsychS'],
+          ['Science, Technology, and Society', 'STS'],
+          ['Sustainability Studies', 'SustS']]
+
+
+def new_int(x):
+    if x != "":
+        x = int(x)
+    else:
+        x = 1e20
+    return x
 
 
 def nick_gen(data, max_len=32):
@@ -165,55 +200,37 @@ async def ask_lname(member):
             return response.content
 
 
-async def ask_type(member, allow_guest=True) -> UserType | None:
+async def ask_type(member, allow_guest=True):
     it = 0
     while it < maxiter:
         it += 1
-
-        message = "Please respond with which of the following groups best describes you:\n"
-
-        # Create the list of user types
-        message += "```\n"
-        for index, option in enumerate(UserType):
-            message += f"{index}. {option}\n"
-        message += "```\n"
-
-        message += "(type the number that corresponds to the group)"
-
-        await member.send(message)
-
+        await member.send(
+            'Please respond with which of the following groups best describes you:``` 1. student\n 2. faculty/staff member\n 3. alumni\n 4. other```(type the number that corresponds to the group)')
         response = await bot.wait_for('message', check=lambda m: m.author == member and isinstance(m.channel, discord.DMChannel))
-        index = new_int(''.join(filter(str.isdigit, response.content)))
-
-        if index < 0 or index >= len(UserType):
-            await member.send(f"Your response is not a valid answer, expected answer is a number from 0 to {len(UserType) - 1}")
+        res = new_int(''.join(filter(str.isdigit, response.content)))
+        if 1 <= res <= 4:
+            case = int(res)
+        else:
+            await member.send('Your response is not a valid answer, expected answers include: "1", "2", "3",and "4"')
             continue
-
-        user_types = list(UserType)
-        user_type = user_types[index]
-
-        await member.send(f"Your response: {user_type}")
-
-        if user_type is not UserType.OTHER:
-            return user_type
-
-        if allow_guest:
+        await member.send(f'Your response: {["error", "Student", "Faculty/Staff Member", "Alumni", "Other"][case]}')
+        if case == 4 and allow_guest:
             await member.send(
-                "You have indicated that you are in a category other than student, faculty, staff, or alumni, " +
-                "as such I am not currently able to verify you for access to the server. Please message the " +
-                "server moderators and they will be able to further assist you.")
+                'You have indicated that you are in a category other than student, faculty, staff, or alumni, ' +
+                'as such I am not currently able to verify you for access to the server. Please message the ' +
+                'server moderators and they will be able to further assist you.')
 
             await mod_report(f"user {member} has attempted guest verification.", mention_mod=True)
-            return user_type
-        else:
-            await member.send("Your response is not a valid answer, this bot does not currently support guest admission, if you need further assistance please reach out to the server moderators and they can better assist you.")
+            return ['error', 'Student', 'Faculty/Staff Member', 'Alumni', 'Other'][case], False
+        elif case == 4:
+            await member.send('Your response is not a valid answer, this bot does not currently support guest admission, if you need further assistance please reach out to the server moderators and they can better assist you.')
             continue
+        else:
+            return ['error', 'Student', 'Faculty/Staff Member', 'Alumni', 'Other'][case], case
 
-    return None
 
-
-async def ask_rin(member, user_type, updating_row=None):
-    if user_type == UserType.STUDENT or user_type == UserType.FACULTY_STAFF:
+async def ask_rin(member, response_case, updating_row=None):
+    if response_case == 1 or response_case == 2:
         it = 0
         while it < maxiter:
             it += 1
@@ -236,64 +253,37 @@ async def ask_rin(member, user_type, updating_row=None):
         return ""
 
 
-def digit_or_comma(char: str) -> bool:
-    """
-    Returns true if the character is a digit or comma.
-
-    Used for filter expressions.
-    """
-    return char.isdigit() or char == ","
-
-
-async def ask_major(member, user_type):
+async def ask_major(member, response_case):
     it = 0
     while it < maxiter:
         it += 1
         done = 1
-        if user_type == UserType.STUDENT or user_type == UserType.ALUMNI:
-            student_message = "Respond with the number(s) that correspond to your current major(s)"
-            alumni_message = "Respond wth the number(s) that correspond to the degree(s) that your received from RPI"
-
-            message = student_message if user_type == UserType.STUDENT else alumni_message
-
-            message += " (if you have a dual and/or double major you may enter multiple numbers separated by commas, e.g 4,27,12)"
-
-            # Create the list of all majors
-            message += "```\n"
-            for index, option in enumerate(Major):
-                message += f"{index}. {option.major}\n"
+        if response_case == 1 or response_case == 3:
+            message = ['error', 'Respond with the number(s) that correspond to your current Major(s)', 'error',
+                       'Respond with the number(s) that correspond to the degree(s) you received from RPI'][
+                          response_case] + ' (if you have a dual and/or double major you may enter multiple numbers separated by commas, eg. "4,27,12" or "9"'
+            message += f'``` 0. {majors[0][0]}'
+            for i in range(len(majors) - 1):
+                message += f'\n {i + 1}. {majors[i + 1][0]}'
             message += "```"
-
             await member.send(message)
             response = await bot.wait_for('message', check=lambda m: m.author == member and isinstance(m.channel, discord.DMChannel))
-
-            answers = ''.join(filter(digit_or_comma, response.content)).split(',')
-
-            if len(answers) < 1:
+            res = ''.join(filter(lambda x: x == ',' or x.isdigit(), response.content))
+            res = res.split(',')
+            if len(res) < 1:
                 await member.send(
-                    f'Your response is not a valid answer, expected answers must include  at least one number between 0 and {len(Major) - 1}')
+                    f'Your response is not a valid answer, expected answers must include  at least one number between 0 and {len(majors) - 1}')
                 continue
-
             res_long = []
             res_short = ""
-
-            # NOTE The ordering of `list(Major)` is guaranteed to match the ordering of `enumerate(Major)`
-            majors = list(Major)
-
-            for answer in answers:
-                answer = new_int(answer)
-
-                if answer >= len(Major) or answer < 0:
+            for i in range(len(res)):
+                if new_int(res[i]) >= len(majors) or new_int(res[i]) < 0:
                     await member.send(
-                        f'Your response is not a valid answer, expected answers must only include numbers between 0 and {len(Major) - 1}')
+                        f'Your response is not a valid answer, expected answers must only include numbers between 0 and {len(majors) - 1}')
                     done = 0
                     break
-
-                # Selects the value from the `Major` enum based on user input
-                selected_major = majors[answer]
-
-                res_long.append(selected_major.major)
-                res_short += selected_major.alias
+                res_long.append(majors[new_int(res[i])][0])
+                res_short += majors[new_int(res[i])][1] + "/"
             if done == 1:
                 await member.send(
                     f'''Your response: {"".join(filter(lambda x: x != "[" and x != "]" and x != "'", str(res_long)))}''')
@@ -310,22 +300,21 @@ async def ask_major(member, user_type):
             return response.content
 
 
-async def ask_gradyear(member, user_type):
+async def ask_gradyear(member, response_case):
     it = 0
     while it < maxiter:
         it += 1
-
-        if user_type == UserType.ALUMNI:
-            await member.send( 'If you graduated from RPI what year did you do so? (please respond with a four-digit year eg. 2000 or "N/A" if you did not graduate from RPI)') elif response_case == 3:
+        if response_case == 2:
+            await member.send(
+                'If you graduated from RPI what year did you do so? (please respond with a four-digit year eg. 2000 or "N/A" if you did not graduate from RPI)')
+        elif response_case == 3:
             await member.send(
                 'What year did you graduate from RPI? (please respond with a four-digit year eg. 2000)')
         else:
             await member.send(
                 'What is your expected graduation year? (please respond with a four-digit year eg. 2000)')
-
         response = await bot.wait_for('message', check=lambda m: m.author == member and isinstance(m.channel, discord.DMChannel))
-
-        if user_type == UserType.FACULTY_STAFF and (response.content.count('n') > 0 or response.content.count('N') > 0) and (response.content.count('a') > 0 or response.content.count('A') > 0):
+        if response_case == 2 and (response.content.count('n') > 0 or response.content.count('N') > 0) and (response.content.count('a') > 0 or response.content.count('A') > 0):
             await member.send(f'Your response: N/A')
             return ""
         elif len(''.join(filter(str.isdigit, response.content))) == 4:
@@ -354,7 +343,7 @@ async def ask_eula(member):
             continue
 
 
-async def ask_email(member, user_type, updating_row=None):
+async def ask_email(member, response_case, updating_row=None):
     done = 0
     otp_burn = 1
     message = 0
@@ -363,12 +352,12 @@ async def ask_email(member, user_type, updating_row=None):
     while iter1 < maxiter:
         iter1 += 1
         sub_esc = 0
-        if user_type != UserType.OTHER:
+        if response_case != 3:
             await member.send('What is your RPI email address?')
         else:
             await member.send('What is your email address?')
         response = await bot.wait_for('message', check=lambda m: m.author == member and isinstance(m.channel, discord.DMChannel))
-        if user_type != UserType.OTHER and response.content[-8:] != "@rpi.edu":
+        if response_case != 3 and response.content[-8:] != "@rpi.edu":
             await member.send(
                 'Your response is not a valid answer, expected answers must be an email address ending with "@rpi.edu"')
             continue
@@ -450,25 +439,26 @@ async def process_verification(member, reply_channel=None):
     responses.append(await ask_lname(member))
 
     # Question 3
-    user_type = await ask_type(member)
-    responses.append(user_type)
+    response, response_case = await ask_type(member)
+    responses.append(response)
 
     # Filter out guests
-    if user_type != UserType.OTHER:
+    if response_case != False:
+
         # Question 4
-        responses.append(await ask_rin(member, user_type))
+        responses.append(await ask_rin(member, response_case))
 
         # Question 5
-        responses.append(await ask_major(member, user_type))
+        responses.append(await ask_major(member, response_case))
 
         # Question 6
-        responses.append(await ask_gradyear(member, user_type))
+        responses.append(await ask_gradyear(member, response_case))
 
         # Question 7
         responses.append(await ask_eula(member))
 
         # Question 8
-        responses.append(await ask_email(member, user_type))
+        responses.append(await ask_email(member, response_case))
 
         # Add data to csv
         Di.add_data(responses)
@@ -476,17 +466,22 @@ async def process_verification(member, reply_channel=None):
         # Updates Nickname
         await nick_set(member)
 
-        if user_type == UserType.STUDENT:
+        if response_case == 1:
             await update_roles(member, rc.case1)
-        elif user_type == UserType.FACULTY_STAFF:
+        elif response_case == 2:
             await update_roles(member, rc.case2)
-        elif user_type == UserType.ALUMNI:
+        elif response_case == 3:
             await update_roles(member, rc.case3)
 
-        # Mention the moderators if the user is not a student
-        mention_mod = user_type != UserType.STUDENT
+        # notify moderator of new member
+        if response_case != 1:
+            priority = True
+        else:
+            priority = False
 
-        await mod_report(f"new {user_type} added to server with nickname {member.display_name}\nresponses: {str(responses)}", mention_mod=mention_mod)
+        mem_type = ['error', "student", "faculty/staff member", "alumnus"][response_case]
+
+        await mod_report(f"new {mem_type} added to server with nickname {member.display_name}\nresponses: {str(responses)}", mention_mod=priority)
 
 
 async def process_update(member, alt_updater=False):
@@ -542,32 +537,29 @@ async def process_update(member, alt_updater=False):
         data[2] = await ask_lname(member)
 
     if 3 in to_update:
-        user_type = await ask_type(member, allow_guest=False)
-        # TODO I assume that everything in `data` must be a string (or at least serialized to a string)
-        data[3] = str(user_type)
+        data[3], response_case = await ask_type(member, allow_guest=False)
     else:
-        # TODO There is potential for an error in migration if the existing data does not match `UserType`
-        if data[3] == str(UserType.STUDENT):
-            user_type = UserType.STUDENT
-        elif data[3] == str(UserType.FACULTY_STAFF):
-            user_type = UserType.FACULTY_STAFF
+        if data[3] == "Student":
+            response_case = 1
+        elif data[3] == "Faculty/Staff":
+            response_case = 2
         else:
-            user_type = UserType.ALUMNI
+            response_case = 3
 
     if 4 in to_update:
-        data[4] = await ask_rin(member, user_type, updating_row=data_index)
+        data[4] = await ask_rin(member, response_case, updating_row=data_index)
 
     if 5 in to_update:
-        data[5] = await ask_major(member, user_type)
+        data[5] = await ask_major(member, response_case)
 
     if 6 in to_update:
-        data[6] = await ask_gradyear(member, user_type)
+        data[6] = await ask_gradyear(member, response_case)
 
     if 7 in to_update:
         data[7] = await ask_eula(member)
 
     if 8 in to_update:
-        data[8] = await ask_email(member, user_type, updating_row=data_index)
+        data[8] = await ask_email(member, response_case, updating_row=data_index)
 
     Di.data_update(data)
 
@@ -575,12 +567,17 @@ async def process_update(member, alt_updater=False):
 
     await nick_set(member)
 
-    # Mention the moderators if the user is not a student
-    mention_mod = user_type != UserType.STUDENT
+    # notify moderator of new member
+    if response_case != 1:
+        priority = True
+    else:
+        priority = False
+
+    mem_type = ['error', "student", "faculty/staff member", "alumnus"][response_case]
 
     await mod_report(
-        f"{member.display_name} updated data\nmember type: {user_type}\nnew data: {str(data)}\nfields updated: {to_update}",
-        mention_mod=mention_mod)
+        f"{member.display_name} updated data\nmember type: {mem_type}\nnew data: {str(data)}\nfields updated: {to_update}",
+        mention_mod=priority)
 
 
 @bot.event
