@@ -7,7 +7,7 @@ from datetime import datetime
 script_path = os.path.dirname(os.path.abspath(__file__))
 
 # Construct the relative path to the JSON file
-json_filename = "empirical-envoy-402616-355b694e8dcf.json"
+json_filename = "Configs/empirical-envoy-402616-355b694e8dcf.json"
 json_keyfile_path = os.path.join(script_path, json_filename)
 
 if os.path.exists(json_keyfile_path):
