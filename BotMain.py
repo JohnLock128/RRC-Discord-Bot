@@ -3,10 +3,14 @@ from discord.ext import commands
 import re
 import sendgrid
 from sendgrid.helpers.mail import Mail, Email, To, Content
-import Token
+from Configs import Token, role_config as rc
 import random
-import role_config as rc
 import Data_interact as Di
+
+# Test Mode
+if Token.Test:
+    from TestConfigs import Token, role_config as rc
+
 
 intents = discord.Intents.default()
 intents.members = True  # This enables member events
@@ -587,51 +591,63 @@ async def on_ready():
 
 @bot.event
 async def on_member_join(member):
-    public_welcome = f'Welcome to the server, {member.mention}!\nTo gain access to the full server we require you complete a brief verification process, to start the process type !verify and I\'ll send you the next steps.'
+    # check for correct server
+    if member.guild.id == Token.Guild_ID:
+        public_welcome = f'Welcome to the server, {member.mention}!\nTo gain access to the full server we require you complete a brief verification process, to start the process type !verify and I\'ll send you the next steps.'
 
-    welcome_channel = member.guild.system_channel
-    if welcome_channel:
-        await welcome_channel.send(public_welcome)
-    await update_roles(member, rc.case0)
+        welcome_channel = member.guild.system_channel
+        if welcome_channel:
+            await welcome_channel.send(public_welcome)
+        await update_roles(member, rc.case0)
 
 
 @bot.event
 async def on_member_remove(member):
-    await mod_report(f"member departed with data: {Di.get_data(member.id)}")
-    Di.rem_data(member.id)
+    # check for correct server
+    if member.guild.id == Token.Guild_ID:
+        await mod_report(f"member: {member.nick} \ndeparted with data: {Di.get_data(member.id)}")
+        Di.rem_data(member.id)
 
 
 @bot.command()
 async def force_verification(ctx, member: discord.Member):
-    # Check if the command invoker has permission to use the command
-    if ctx.author.guild_permissions.administrator:
-        await ctx.send(f'Starting verification process for {member.mention}...')
-        await process_verification(member)  # Manually trigger the on_member_join event for the specified member
-    else:
-        await ctx.send('You do not have permission to use this command.')
+    # check for correct server
+    if ctx.guild.id == Token.Guild_ID:
+        # Check if the command invoker has permission to use the command
+        if ctx.author.guild_permissions.administrator:
+            await ctx.send(f'Starting verification process for {member.mention}...')
+            await process_verification(member)  # Manually trigger the on_member_join event for the specified member
+        else:
+            await ctx.send('You do not have permission to use this command.')
 
 
 @bot.command()
 async def verify(ctx):
-    if any(role.id == rc.New for role in ctx.author.roles):
-        await process_verification(ctx.author, reply_channel=ctx.channel)
+    # check for correct server
+    if ctx.guild.id == Token.Guild_ID:
+        if any(role.id == rc.New for role in ctx.author.roles):
+            await process_verification(ctx.author, reply_channel=ctx.channel)
 
 
 @bot.command()
 async def remove(ctx, member: discord.Member):
-    # Check if the command invoker has permission to use the command
-    if ctx.author.guild_permissions.administrator:
-        await update_roles(member, rc.case0, keep_only_specified=True)
-        await ctx.send(f"removing member with data: {Di.get_data(member.id)}")
-        Di.rem_data(member.id)
-    else:
-        await ctx.send('You do not have permission to use this command.')
+    # check for correct server
+    if ctx.guild.id == Token.Guild_ID:
+        # Check if the command invoker has permission to use the command
+        if ctx.author.guild_permissions.administrator:
+            await update_roles(member, rc.case0, keep_only_specified=True)
+            await ctx.send(f"removing member with data: {Di.get_data(member.id)}")
+            Di.rem_data(member.id)
+        else:
+            await ctx.send('You do not have permission to use this command.')
 
 
 @bot.command()
 async def update(ctx):
-    if not any(role.id == rc.New for role in ctx.author.roles):
-        await process_update(ctx.author)
+    # check for correct server
+    if ctx.guild.id == Token.Guild_ID:
+        if not any(role.id == rc.New for role in ctx.author.roles):
+            await process_update(ctx.author)
 
 
 bot.run(Token.Discord)
