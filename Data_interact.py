@@ -5,7 +5,7 @@ filename = "Data.csv"
 
 def add_data(data):
     # Read the existing data from the CSV file
-    with open(filename, 'r') as file:
+    with open(filename, "r") as file:
         reader = csv.reader(file)
         rows = list(reader)
 
@@ -20,14 +20,14 @@ def add_data(data):
     rows.insert(insert_index + 1, data)
 
     # Write the updated data back to the CSV file
-    with open(filename, 'w', newline='') as file:
+    with open(filename, "w", newline="") as file:
         writer = csv.writer(file)
         writer.writerows(rows)
 
 
 def get_data(user_id, index=False):
     # Read the existing data from the CSV file
-    with open(filename, 'r') as file:
+    with open(filename, "r") as file:
         reader = csv.reader(file)
         rows = list(reader)
 
@@ -47,7 +47,7 @@ def get_data(user_id, index=False):
 
 def rem_data(user_id):
     # Read the existing data from the CSV file
-    with open(filename, 'r') as file:
+    with open(filename, "r") as file:
         reader = csv.reader(file)
         rows = list(reader)
 
@@ -61,7 +61,7 @@ def rem_data(user_id):
     del rows[index_to_remove]
 
     # Write the updated data back to the CSV file
-    with open(filename, 'w', newline='') as file:
+    with open(filename, "w", newline="") as file:
         writer = csv.writer(file)
         writer.writerows(rows)
 
@@ -71,7 +71,7 @@ def data_validate(user_id):
     valid = [False, False, False, False, False, False, False, False, False]
     invalid = []
     for i in range(len(data)):
-        if data[i] != '':
+        if data[i] != "":
             valid[i] = True
         elif i == 4 and data[3] == "Alumni":
             valid[i] = True
@@ -89,7 +89,7 @@ def data_validate(user_id):
 
 def get_headers():
     # Read the header row from the CSV file
-    with open(filename, 'r') as file:
+    with open(filename, "r") as file:
         reader = csv.reader(file)
         headers = next(reader)  # Get the first row (header)
 
@@ -98,13 +98,15 @@ def get_headers():
 
 def unique_on_col(value, column_index, ignore_row_index=None):
     # Read the existing data from the CSV file
-    with open(filename, 'r') as file:
+    with open(filename, "r") as file:
         reader = csv.reader(file)
         rows = list(reader)
 
     if value != "":
         # Check if the value is unique in the specified column
-        for index, row in enumerate(rows[1:], 1):  # Start from index 1 to skip the header
+        for index, row in enumerate(
+            rows[1:], 1
+        ):  # Start from index 1 to skip the header
             if index == ignore_row_index:
                 continue  # Skip checking in the specified row index
 
@@ -116,14 +118,16 @@ def unique_on_col(value, column_index, ignore_row_index=None):
 
 def data_update(updated_data):
     # Read the existing data from the CSV file
-    with open(filename, 'r') as file:
+    with open(filename, "r") as file:
         reader = csv.reader(file)
         rows = list(reader)
 
     # Find the index of the row with the matching first column
     index_to_update = None
     for index, row in enumerate(rows[1:]):  # Start from index 1 to skip the header
-        if int(row[0]) == int(updated_data[0]):  # Assuming the first column contains integers
+        if int(row[0]) == int(
+            updated_data[0]
+        ):  # Assuming the first column contains integers
             index_to_update = index + 1
             break
 
@@ -132,6 +136,6 @@ def data_update(updated_data):
         rows[index_to_update] = updated_data
 
         # Write the updated data back to the CSV file
-        with open(filename, 'w', newline='') as file:
+        with open(filename, "w", newline="") as file:
             writer = csv.writer(file)
             writer.writerows(rows)
