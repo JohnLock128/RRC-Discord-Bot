@@ -3,10 +3,13 @@ from discord.ext import commands
 import re
 import sendgrid
 from sendgrid.helpers.mail import Mail, Email, To, Content
-from Configs import role_config as rc
+from Configs import Token, role_config as rc
 import random
 import Data_interact as Di
-from config import CONFIG
+
+# Test Mode
+if Token.Test:
+    from TestConfigs import Token, role_config as rc
 
 
 intents = discord.Intents.default()
@@ -15,8 +18,8 @@ intents.message_content = True  # Enable the MESSAGE_CONTENT intent
 
 bot = commands.Bot(command_prefix='!', intents=intents)
 
-sheet_name = CONFIG.sheet_name
-worksheet_index = CONFIG.sheet_index
+sheet_name = Token.Sheet_Name
+worksheet_index = Token.Sheet_Index
 
 maxiter = 1000
 
@@ -165,10 +168,9 @@ async def update_roles(member, role_descriptions, keep_only_specified=False):
 
 
 async def mod_report(message, mention_mod=False):
-    channel = await bot.fetch_channel(CONFIG.modmail_channel_id)
+    user = await bot.fetch_user(Token.Mod_ID)
+    channel = await bot.fetch_channel(Token.Channel_ID)
     if mention_mod:
-        # FIXME `fetch_user` expects a user ID but the config defines a role ID
-        user = await bot.fetch_user(CONFIG.modmail_role_id)
         message = f"{user.mention} {message}"
     await channel.send(message)
 
@@ -375,7 +377,7 @@ async def ask_email(member, response_case, updating_row=None):
             await member.send(
                 f'you will be sent an email at {response.content} shortly. Please Respond here with the 6-digit code sent in that email. After this, your server verification will be complete!\n(Be sure to check your junk mail as it is likely to be flagged as spam. Additionally, if you need the email to be resent reply "1", and if you need to re-enter your email, reply "2")')
             # Create a SendGrid client
-            sg = sendgrid.SendGridAPIClient(api_key=CONFIG.sendgrid_token)
+            sg = sendgrid.SendGridAPIClient(api_key=Token.SendGrid)
             iter2 = 0
             while iter2 < maxiter:
                 iter2 += 1
@@ -590,7 +592,7 @@ async def on_ready():
 @bot.event
 async def on_member_join(member):
     # check for correct server
-    if member.guild.id == CONFIG.discord_guild_id:
+    if member.guild.id == Token.Guild_ID:
         public_welcome = f'Welcome to the server, {member.mention}!\nTo gain access to the full server we require you complete a brief verification process, to start the process type !verify and I\'ll send you the next steps.'
 
         welcome_channel = member.guild.system_channel
@@ -602,7 +604,7 @@ async def on_member_join(member):
 @bot.event
 async def on_member_remove(member):
     # check for correct server
-    if member.guild.id == CONFIG.discord_guild_id:
+    if member.guild.id == Token.Guild_ID:
         await mod_report(f"member: {member.nick} \ndeparted with data: {Di.get_data(member.id)}")
         Di.rem_data(member.id)
 
@@ -610,7 +612,7 @@ async def on_member_remove(member):
 @bot.command()
 async def force_verification(ctx, member: discord.Member):
     # check for correct server
-    if ctx.guild.id == CONFIG.discord_guild_id:
+    if ctx.guild.id == Token.Guild_ID:
         # Check if the command invoker has permission to use the command
         if ctx.author.guild_permissions.administrator:
             await ctx.send(f'Starting verification process for {member.mention}...')
@@ -622,7 +624,7 @@ async def force_verification(ctx, member: discord.Member):
 @bot.command()
 async def verify(ctx):
     # check for correct server
-    if ctx.guild.id == CONFIG.discord_guild_id:
+    if ctx.guild.id == Token.Guild_ID:
         if any(role.id == rc.New for role in ctx.author.roles):
             await process_verification(ctx.author, reply_channel=ctx.channel)
 
@@ -630,7 +632,7 @@ async def verify(ctx):
 @bot.command()
 async def remove(ctx, member: discord.Member):
     # check for correct server
-    if ctx.guild.id == CONFIG.discord_guild_id:
+    if ctx.guild.id == Token.Guild_ID:
         # Check if the command invoker has permission to use the command
         if ctx.author.guild_permissions.administrator:
             await update_roles(member, rc.case0, keep_only_specified=True)
@@ -643,9 +645,9 @@ async def remove(ctx, member: discord.Member):
 @bot.command()
 async def update(ctx):
     # check for correct server
-    if ctx.guild.id == CONFIG.discord_guild_id:
+    if ctx.guild.id == Token.Guild_ID:
         if not any(role.id == rc.New for role in ctx.author.roles):
             await process_update(ctx.author)
 
 
-bot.run(CONFIG.discord_token)
+bot.run(Token.Discord)
