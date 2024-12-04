@@ -5,3 +5,4 @@ __pycache__/
 Data.csv
 Data_Backups/
 logfiles/
+config.py
