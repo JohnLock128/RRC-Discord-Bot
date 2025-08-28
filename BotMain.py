@@ -591,12 +591,13 @@ async def on_ready():
 async def on_member_join(member):
     # check for correct server
     if member.guild.id == CONFIG.discord_guild_id:
-        public_welcome = f'Welcome to the server, {member.mention}!\nTo gain access to the full server we require you complete a brief verification process, to start the process type !verify and I\'ll send you the next steps.'
-
-        welcome_channel = member.guild.system_channel
-        if welcome_channel:
-            await welcome_channel.send(public_welcome)
-        await update_roles(member, rc.case0)
+        # public_welcome = f'Welcome to the server, {member.mention}!\nTo gain access to the full server we require you complete a brief verification process, to start the process type !verify and I\'ll send you the next steps.'
+        #
+        # welcome_channel = member.guild.system_channel
+        # if welcome_channel:
+        #     await welcome_channel.send(public_welcome)
+        # await update_roles(member, rc.case0)
+        await member.add_roles(rc.Member);
 
 
 @bot.event
