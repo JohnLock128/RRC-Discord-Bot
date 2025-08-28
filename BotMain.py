@@ -584,7 +584,7 @@ async def process_update(member, alt_updater=False):
 
 @bot.event
 async def on_ready():
-    await mod_report(f'Logged in as {bot.user.name}')
+    await mod_report(f'Logged in as {bot.user.name} with new member patch')
 
 
 @bot.event
