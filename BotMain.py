@@ -421,7 +421,8 @@ async def ask_email(member, response_case, updating_row=None):
 
 
 async def process_verification(member, reply_channel=None):
-    await mod_report("beginning verification for: " + str(member.id))
+    await mod_report(str(member.id) + " requested verification")
+    return
     # Send a welcome message in the server channel and DM to the new member
     public_welcome = f'Thank you for beginning the verification process, {member.mention}! I will DM you momentarily to get started.'
     private_welcome = 'In order to verify you for access to the server we ask that you please answer the following 7-8 questions. (if you make any mistakes entering your data, you can update it after you have completed verification using the !update command)'
@@ -584,7 +585,7 @@ async def process_update(member, alt_updater=False):
 
 @bot.event
 async def on_ready():
-    await mod_report(f'Logged in as {bot.user.name} with new member patch')
+    await mod_report(f'Logged in as {bot.user.name} with new member patch & fix (1)')
 
 
 @bot.event
@@ -597,6 +598,7 @@ async def on_member_join(member):
         # if welcome_channel:
         #     await welcome_channel.send(public_welcome)
         # await update_roles(member, rc.case0)
+        await mod_report(f'Attempting to give Member role to {member.display_name}')
         await member.add_roles(rc.Member);
 
 
