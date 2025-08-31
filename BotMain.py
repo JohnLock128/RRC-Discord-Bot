@@ -599,7 +599,7 @@ async def on_member_join(member):
         #     await welcome_channel.send(public_welcome)
         # await update_roles(member, rc.case0)
         await mod_report(f'Attempting to give Member role to {member.display_name}')
-        await member.add_roles(rc.Member);
+        await update_roles(member, rc.case1)
 
 
 @bot.event
